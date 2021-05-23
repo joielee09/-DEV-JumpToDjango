@@ -1,7 +1,8 @@
 from django.http.response import HttpResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 from .models import Question
 from django.utils import timezone
+from .forms import *
 
 def index(request): # index 함수의 매개변수 request는 장고에 의해 자동으로 전달되는 HTTP 요청 객체.
   
@@ -26,5 +27,32 @@ def answer_create(request, question_id):
     pybo 답변등록
     """
     question = get_object_or_404(Question, pk=question_id)
-    question.answer_set.create(content=request.POST.get('content'), create_date=timezone.now())
-    return redirect('pybo:detail', question_id=question.id)
+    if request.method == "POST":
+        form = AnswerForm(request.POST)
+        if form.is_valid():
+            answer = form.save(commit=False)
+            answer.create_date = timezone.now()
+            answer.question = question
+            answer.save()
+            return redirect('pybo:detail', question_id=question.id)
+    else:
+        form = AnswerForm()
+    context = {'question': question, 'form': form}
+    return render(request, 'pybo/question_detail.html', context)
+
+def question_create(request):
+    """
+    pybo 질문생성
+    """
+    if(request.method == 'POST'):
+      form = QuestionForm(request.POST) 
+      if form.is_valid(): # POST 요청 받은 form이 유효한 지 검사
+        question = form.save(commit=False) # commit=False: 임시저장
+        question.create_date = timezone.now() # question 객체를 반환 받아 create_date 값 설정 후
+        question.save() # 데이터로 실제 저장
+        return redirect('pybo:index')
+    else:
+      form = QuestionForm()
+    context = {'form': form}
+    return render(request, 'pybo/question_form.html', context)
+
