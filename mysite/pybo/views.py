@@ -3,15 +3,23 @@ from django.shortcuts import redirect, render, get_object_or_404
 from .models import Question
 from django.utils import timezone
 from .forms import *
+from django.core.paginator import Paginator
 
 def index(request): # index 함수의 매개변수 request는 장고에 의해 자동으로 전달되는 HTTP 요청 객체.
   
-    # pybo 목록출력
+  page = request.GET.get('page', '1')  # 페이지
+  
+  # pybo 목록출력
   question_list = Question.objects.order_by('-create_date')
   context  = {'question_list': question_list}
+  
+  # 페이징처리
+  paginator = Paginator(question_list, 10)  # 페이지당 10개씩 보여주기
+  page_obj = paginator.get_page(page)
 
+  context = {'question_list': page_obj}
   # return HttpResponse("안녕하세요, pybo에 오신 것을 환영합니다.")
-  return render(request, 'pybo/question_list.html', context) # django template
+  return render(request, 'pybo/question_list.html', context)
 
 def detail(request, question_id):
 
